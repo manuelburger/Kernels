@@ -103,7 +103,7 @@ def main():
     sdfg = dgemm.to_sdfg()
 
     # blocking for cache locality,
-    # customize cache size according to architecture
+    # customize block size according to architecture
     from dace.transformation.dataflow import MapTiling
     block_size = 16
     sdfg.apply_transformations(
