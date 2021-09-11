@@ -64,7 +64,9 @@
 # *******************************************************************
 
 import sys
-print('Python version = ', str(sys.version_info.major)+'.'+str(sys.version_info.minor))
+
+print('Python version = ',
+      str(sys.version_info.major) + '.' + str(sys.version_info.minor))
 if sys.version_info >= (3, 3):
     from time import process_time as timer
 else:
@@ -72,7 +74,9 @@ else:
 
 import dace
 import numpy
+
 print('Numpy version  = ', numpy.version.version)
+
 
 def main():
 
@@ -80,7 +84,7 @@ def main():
     # read and test input parameters
     # ********************************************************************
 
-    print('Parallel Research Kernels version ') #, PRKVERSION
+    print('Parallel Research Kernels version ')  #, PRKVERSION
     print('Python STREAM triad: A = B + scalar * C')
 
     if len(sys.argv) != 3:
@@ -109,10 +113,10 @@ def main():
 
     # define DaCe program
     @dace.program
-    def nstream(
-            A: dace.float64[length], B: dace.float64[length], C: dace.float64[length], 
-            scalar: dace.float64, iterations: dace.int32):
-        for k in range(0,iterations):
+    def nstream(A: dace.float64[length], B: dace.float64[length],
+                C: dace.float64[length], scalar: dace.float64,
+                iterations: dace.int32):
+        for k in range(0, iterations):
             A[:] = A + B + scalar * C
 
     # convert program to SDFG (dataflow graph)
@@ -132,7 +136,6 @@ def main():
     # compile SDFG to program executable
     compiled_sdfg = sdfg.compile()
 
-
     # ********************************************************************
     # ** Allocate space for the input and execute STREAM triad
     # ********************************************************************
@@ -145,8 +148,11 @@ def main():
     scalar = numpy.float64(3.0)
 
     # Call DaCe compiled program
-    compiled_sdfg(A=A, B=B, C=C, scalar=scalar, iterations=numpy.int32(iterations+1))
-
+    compiled_sdfg(A=A,
+                  B=B,
+                  C=C,
+                  scalar=scalar,
+                  iterations=numpy.int32(iterations + 1))
 
     # ********************************************************************
     # ** Analyze and output results.
@@ -156,20 +162,20 @@ def main():
     br = 2.0
     cr = 2.0
     ref = 0.0
-    for k in range(0,iterations+1):
+    for k in range(0, iterations + 1):
         ar += br + scalar * cr
 
     ar *= length
 
-    asum = 0.0;
+    asum = 0.0
     for i in range(length):
         asum += abs(A[i])
 
-    epsilon=1.e-8
-    if abs(ar-asum)/asum > epsilon:
-        print('Failed Validation on output array');
-        print('        Expected checksum: ',ar);
-        print('        Observed checksum: ',asum);
+    epsilon = 1.e-8
+    if abs(ar - asum) / asum > epsilon:
+        print('Failed Validation on output array')
+        print('        Expected checksum: ', ar)
+        print('        Observed checksum: ', asum)
         sys.exit("ERROR: solution did not validate")
     else:
         print('Solution validates')
@@ -178,14 +184,15 @@ def main():
         if sdfg.is_instrumented():
 
             report = sdfg.get_latest_report()
-            avgtime = (sum(list(report.durations.values())[0][1:])/iterations) / 1000
-        
-            nbytes = 4.0 * length * 8 # 8 is not sizeof(double) in bytes, but allows for comparison to C etc.
-            print('Rate (MB/s): ',1.e-6*nbytes/avgtime, ' Avg time (s): ', avgtime)
+            avgtime = (sum(list(report.durations.values())[0][1:]) /
+                       iterations) / 1000
+
+            nbytes = 4.0 * length * 8  # 8 is not sizeof(double) in bytes, but allows for comparison to C etc.
+            print('Rate (MB/s): ', 1.e-6 * nbytes / avgtime, ' Avg time (s): ',
+                  avgtime)
         else:
             print("Instrumentation failed")
 
 
 if __name__ == '__main__':
     main()
-
