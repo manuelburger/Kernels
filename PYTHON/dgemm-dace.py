@@ -102,7 +102,8 @@ def main():
     # convert program to SDFG (dataflow graph)
     sdfg = dgemm.to_sdfg()
 
-    # tile map, prevent false sharing of cache lines
+    # blocking for cache locality,
+    # customize cache size according to architecture
     from dace.transformation.dataflow import MapTiling
     block_size = 16
     sdfg.apply_transformations(
