@@ -115,17 +115,16 @@ def main():
         A[:] = A + B + scalar * C
 
     # convert program to SDFG (dataflow graph)
-    print("Create SDFG")
     sdfg = nstream.to_sdfg()
 
     # fuse maps
     from dace.transformation.dataflow import MapFusion, MapTiling
     sdfg.apply_transformations_repeated([MapFusion])
 
+    # tile map
     sdfg.apply_transformations(MapTiling, options={'tile_sizes': (8192, )})
 
     # compile SDFG to program executable
-    print("Compile SDFG")
     compiled_sdfg = sdfg.compile()
 
 
