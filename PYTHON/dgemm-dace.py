@@ -47,8 +47,8 @@
 #          algorithm worked, and of timing statistics.
 #
 # HISTORY: Written by Rob Van der Wijngaart, February 2009.
-#          Converted to Python by Jeff Hammond, February 2016.
-#          Fixed timing err, Ave+std_dev, more pythonic, Tim Mattson May 2021
+#          Converted to DaCe by Manuel Burger, September 2021
+#
 # *******************************************************************
 
 import dace

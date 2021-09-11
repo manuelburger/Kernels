@@ -59,7 +59,7 @@
 #          reported results should not be associated with Stream in
 #          external publications
 #
-#          Converted to Python by Jeff Hammond, October 2017.
+#          Converted to DaCe by Manuel Burger, September 2021
 #
 # *******************************************************************
 
