@@ -110,9 +110,10 @@ def main():
     # define DaCe program
     @dace.program
     def nstream(
-            A: dace.float32[length], B: dace.float32[length], C: dace.float32[length], 
-            scalar: dace.float32):
-        A[:] = A + B + scalar * C
+            A: dace.float64[length], B: dace.float64[length], C: dace.float64[length], 
+            scalar: dace.float64, iterations: dace.int32):
+        for k in range(0,iterations):
+            A[:] = A + B + scalar * C
 
     # convert program to SDFG (dataflow graph)
     sdfg = nstream.to_sdfg()
@@ -121,8 +122,12 @@ def main():
     from dace.transformation.dataflow import MapFusion, MapTiling
     sdfg.apply_transformations_repeated([MapFusion])
 
-    # tile map
+    # tile map, prevent false sharing of cache lines
     sdfg.apply_transformations(MapTiling, options={'tile_sizes': (8192, )})
+
+    # activate instrumentation feature
+    for state in sdfg.nodes():
+        state.instrument = dace.InstrumentationType.Timer
 
     # compile SDFG to program executable
     compiled_sdfg = sdfg.compile()
@@ -133,22 +138,15 @@ def main():
     # ********************************************************************
 
     # 0.0 is a float, which is 64b (53b of precision)
-    A = numpy.zeros(length, dtype=numpy.float32)
-    B = numpy.full(length, 2.0, dtype=numpy.float32)
-    C = numpy.full(length, 2.0, dtype=numpy.float32)
+    A = numpy.zeros(length, dtype=numpy.float64)
+    B = numpy.full(length, 2.0, dtype=numpy.float64)
+    C = numpy.full(length, 2.0, dtype=numpy.float64)
 
-    scalar = numpy.float32(3.0)
+    scalar = numpy.float64(3.0)
 
-    for k in range(0,iterations+1):
+    # Call DaCe compiled program
+    compiled_sdfg(A=A, B=B, C=C, scalar=scalar, iterations=numpy.int32(iterations+1))
 
-        if k<1: t0 = timer()
-
-        compiled_sdfg(A=A, B=B, C=C, scalar=scalar)
-
-
-    t1 = timer()
-    nstream_time = t1 - t0
-    print("DaCe done")
 
     # ********************************************************************
     # ** Analyze and output results.
@@ -175,9 +173,17 @@ def main():
         sys.exit("ERROR: solution did not validate")
     else:
         print('Solution validates')
-        avgtime = nstream_time/iterations
-        nbytes = 4.0 * length * 8 # 8 is not sizeof(double) in bytes, but allows for comparison to C etc.
-        print('Rate (MB/s): ',1.e-6*nbytes/avgtime, ' Avg time (s): ', avgtime)
+
+        # Use DaCe internal instrumentation features
+        if sdfg.is_instrumented():
+
+            report = sdfg.get_latest_report()
+            avgtime = (sum(list(report.durations.values())[0][1:])/iterations) / 1000
+        
+            nbytes = 4.0 * length * 8 # 8 is not sizeof(double) in bytes, but allows for comparison to C etc.
+            print('Rate (MB/s): ',1.e-6*nbytes/avgtime, ' Avg time (s): ', avgtime)
+        else:
+            print("Instrumentation failed")
 
 
 if __name__ == '__main__':
